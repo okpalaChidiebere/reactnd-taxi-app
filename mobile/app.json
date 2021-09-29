@@ -3,9 +3,19 @@
     "name": "mobile",
     "slug": "mobile",
     "version": "1.0.0",
-    "assetBundlePatterns": [
-      "**/*"
-    ]
+    "assetBundlePatterns": ["**/*"],
+    "android": {
+      "config": {
+        "googleMaps": {
+          "apiKey": "MAPS_API_KEY"
+        }
+      }
+    },
+    "ios": {
+      "config": {
+        "googleMapsApiKey": "MAPS_API_KEY"
+      }
+    }
   },
   "name": "mobile"
 }
