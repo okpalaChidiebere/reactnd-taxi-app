@@ -207,6 +207,17 @@ export default function Passenger() {
         ))}
         {/** Dont forget to add a "Powered by Google" logo here. This is a must when using google APIs */}
       </View>
+      {
+        /**We only show the this button after the user has selected a destination
+         */
+        pointCoords.length > 0 && (
+          <TouchableOpacity style={styles.bottomButton}>
+            <View>
+              <Text style={styles.bottomButtonText}> Find Driver</Text>
+            </View>
+          </TouchableOpacity>
+        )
+      }
     </View>
   );
 }
@@ -243,5 +254,19 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     marginLeft: 5,
     marginRight: 5,
+  },
+  bottomButton: {
+    backgroundColor: "black",
+    marginTop: "auto", //moves the button down to the bottom. Another way is to use the absolute property and bottom of zero value
+    margin: 20,
+    padding: 15,
+    paddingLeft: 30,
+    paddingRight: 30,
+    alignSelf: "center",
+  },
+  bottomButtonText: {
+    fontSize: 20,
+    color: "white",
+    fontWeight: "600",
   },
 });
