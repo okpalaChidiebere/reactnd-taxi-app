@@ -130,6 +130,15 @@ export default function App() {
         pointCoords,
       }));
       searchPlaceInputRef.current.blur(); //dismiss the keyBoard
+
+      /*
+      This will set the correct zoom with a little animation show the direction in full
+      
+      You can disable the animation and set edgePadding. The second params is optional
+      */
+      mapRef.current.fitToCoordinates(pointCoords, {
+        edgePadding: { top: 20, bottom: 20, left: 50, right: 50 },
+      });
     } catch (error) {
       console.log(error);
     }
