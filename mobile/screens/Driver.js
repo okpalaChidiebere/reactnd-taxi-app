@@ -1,18 +1,12 @@
 import { StatusBar } from "expo-status-bar";
 import React from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
-  TouchableOpacity,
-} from "react-native";
+import { StyleSheet, View, ActivityIndicator } from "react-native";
 import MapView, { Polyline, Marker } from "react-native-maps";
 import * as Location from "expo-location";
 import Constants from "expo-constants";
-import _ from "lodash";
 import PolyLine from "@mapbox/polyline";
 import apiKey from "../google_api_key";
+import BottomButton from "../components/BottomButton";
 
 const latitudeDelta = 0.015;
 const longitudeDelta = 0.0121;
@@ -22,11 +16,11 @@ export default function Driver() {
     longitude: -122.4324,
     errorMsg: null, //use to know if we successfully get the user current location
     destination: "", //the store the input from the textBox
-    predictions: [],
     pointCoords: [],
+    lookingForPassengers: false, //used to keep track of where to show activityIndicator as the driver is looking for passengers or not
   });
   const mapRef = React.useRef();
-  const searchPlaceInputRef = React.useRef();
+  const passengerSearchText = React.useRef("FIND PASSENGERS 👥");
 
   React.useEffect(() => {
     (async () => {
@@ -59,44 +53,7 @@ export default function Driver() {
     })();
   }, []);
 
-  /** This method searches and set the location that the user wants to go to */
-  const onChangeDestination = (destination) => {
-    setState((currState) => ({
-      ...currState,
-      destination,
-    }));
-    delayedQuery(destination);
-  };
-
-  const queryPlace = async (destination) => {
-    const apiUrl = `https://maps.googleapis.com/maps/api/place/autocomplete/json?key=${apiKey}
-    &input=${destination}&location=${state.latitude},${state.longitude}&radius=2000`;
-    try {
-      const result = await fetch(apiUrl);
-      const json = await result.json();
-
-      setState((currState) => ({
-        ...currState,
-        predictions: json.predictions,
-      }));
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const delayedQuery = React.useCallback(
-    /**
-     * debounce enables us to wait a set period of time before we call the function if the function is not called
-     * with that  set period of time
-     *
-     * Eg we wait for 800ms and if there is not anymore function call since the last call then we run the function
-     * else we wait afresh and wait another 800ms. This helps us not call the place API each time the user is typing
-     *  but instead run the function after 800ms where the user has stop typing which saves us more money :)
-     */
-    _.debounce((q) => queryPlace(q), 800),
-    [state.latitude, state.longitude] //we only want to re-render this callback when the user current location changes like after useEffect, etc
-  );
-
+  /** We used this to show the routes to the passenger */
   const getRouteDirections = async (destinationPlaceId, destinationName) => {
     try {
       /**
@@ -129,7 +86,6 @@ export default function Driver() {
         predictions: [], //we can now resets the predictions to empty because the user has pressed their suggestion
         pointCoords,
       }));
-      searchPlaceInputRef.current.blur(); //dismiss the keyBoard
 
       /*
       This will set the correct zoom with a little animation show the direction in full
@@ -144,7 +100,20 @@ export default function Driver() {
     }
   };
 
-  const { latitude, longitude, destination, predictions, pointCoords } = state;
+  const handleFindPassenger = () => {
+    setState((currState) => ({
+      ...currState,
+      lookingForPassengers: true,
+    }));
+  };
+
+  const {
+    latitude,
+    longitude,
+    destination,
+    pointCoords,
+    lookingForPassengers,
+  } = state;
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
@@ -174,39 +143,14 @@ export default function Driver() {
           <Marker coordinate={pointCoords[pointCoords.length - 1]} />
         )}
       </MapView>
-      <View style={styles.placePickerWrapper}>
-        <TextInput
-          ref={searchPlaceInputRef}
-          placeholder="Enter destination..."
-          style={styles.destinationInput}
-          value={destination}
-          onChangeText={(destination) => onChangeDestination(destination)}
-        />
-        {predictions.map((prediction) => (
-          <TouchableOpacity
-            key={prediction.place_id}
-            onPress={() =>
-              /**
-               * SIDE NOTE: we did not use prediction.description because the description text is too long
-               * and can be too tedious when a user wants to clear the search input.
-               * so we use a shorter text formate which is prediction.structured_formatting.main_text
-               *
-               * Feel free to test the placePicker endpoint in postman to see all these values
-               * https://developers.google.com/maps/documentation/places/web-service/search-text
-               */
-              getRouteDirections(
-                prediction.place_id,
-                prediction.structured_formatting.main_text
-              )
-            }
-          >
-            <View style={styles.suggestions}>
-              <Text>{prediction.structured_formatting.main_text}</Text>
-            </View>
-          </TouchableOpacity>
-        ))}
-        {/** Dont forget to add a "Powered by Google" logo here. This is a must when using google APIs */}
-      </View>
+      <BottomButton
+        onPressFunction={handleFindPassenger}
+        buttonText={passengerSearchText.current}
+      >
+        {lookingForPassengers && (
+          <ActivityIndicator animating={lookingForPassengers} size="large" />
+        )}
+      </BottomButton>
     </View>
   );
 }
