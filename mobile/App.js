@@ -7,13 +7,13 @@ import {
   TextInput,
   TouchableOpacity,
 } from "react-native";
-import MapView, { Polyline } from "react-native-maps";
+import MapView, { Polyline, Marker } from "react-native-maps";
 import * as Location from "expo-location";
 import Constants from "expo-constants";
 import _ from "lodash";
 import PolyLine from "@mapbox/polyline";
 
-const apiKey = "AIzaSyAKxH4esJysRp_N9D0gNdJqmgILb8MbzEU";
+const apiKey = "";
 const latitudeDelta = 0.015;
 const longitudeDelta = 0.0121;
 export default function App() {
@@ -169,6 +169,10 @@ export default function App() {
            *  */
           lineDashPattern={pointCoords.length > 0 ? null : [1]}
         />
+        {pointCoords.length > 0 && ( //we only set the marker when the user has selected a place
+          /** we set the marker at the very last point */
+          <Marker coordinate={pointCoords[pointCoords.length - 1]} />
+        )}
       </MapView>
       <View style={styles.placePickerWrapper}>
         <TextInput
