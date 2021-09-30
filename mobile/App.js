@@ -1,12 +1,21 @@
 import { StatusBar } from "expo-status-bar";
 import React from "react";
-import { StyleSheet, Text, View, TextInput } from "react-native";
-import MapView from "react-native-maps";
+import {
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  TouchableOpacity,
+} from "react-native";
+import MapView, { Polyline } from "react-native-maps";
 import * as Location from "expo-location";
 import Constants from "expo-constants";
 import _ from "lodash";
+import PolyLine from "@mapbox/polyline";
 
-const apiKey = "";
+const apiKey = "AIzaSyAKxH4esJysRp_N9D0gNdJqmgILb8MbzEU";
+const latitudeDelta = 0.015;
+const longitudeDelta = 0.0121;
 export default function App() {
   const [state, setState] = React.useState({
     latitude: 37.78825,
@@ -14,8 +23,10 @@ export default function App() {
     errorMsg: null, //use to know if we successfully get the user current location
     destination: "", //the store the input from the textBox
     predictions: [],
+    pointCoords: [],
   });
   const mapRef = React.useRef();
+  const searchPlaceInputRef = React.useRef();
 
   React.useEffect(() => {
     (async () => {
@@ -40,6 +51,8 @@ export default function App() {
         {
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
+          latitudeDelta, //must specify to work properly on Android
+          longitudeDelta, //must specify to work properly on Android
         },
         1000
       );
@@ -81,10 +94,48 @@ export default function App() {
      *  but instead run the function after 800ms where the user has stop typing which saves us more money :)
      */
     _.debounce((q) => queryPlace(q), 800),
-    []
+    [state.latitude, state.longitude] //we only want to re-render this callback when the user current location changes like after useEffect, etc
   );
 
-  const { latitude, longitude, destination, predictions } = state;
+  const getRouteDirections = async (destinationPlaceId, destinationName) => {
+    try {
+      /**
+       * FYI: we are ble to use thesame key for PlacePicker and directions API from Google because we
+       * restricted the key to these two APIs
+       *
+       * Learn more about the Directions API and params that you can pass in the request here
+       * https://developers.google.com/maps/documentation/directions/get-directions#DirectionsRequests
+       * Be sure to test the api in postMan if you want :)
+       */
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/directions/json?origin=${state.latitude},${state.longitude}&destination=place_id:${destinationPlaceId}&key=${apiKey}`
+      );
+      const json = await response.json();
+
+      //convert the string of points from the an array of points or directions
+      const points = PolyLine.decode(json.routes[0].overview_polyline.points);
+
+      /**
+       * Map over each of the points and convert each point into an object containing the latitude and longitude
+       * which the Polyline in react-native-maps understand.
+       * */
+      const pointCoords = points.map((point) => {
+        return { latitude: point[0], longitude: point[1] };
+      });
+
+      setState((currState) => ({
+        ...currState,
+        destination: destinationName,
+        predictions: [], //we can now resets the predictions to empty because the user has pressed their suggestion
+        pointCoords,
+      }));
+      searchPlaceInputRef.current.blur(); //dismiss the keyBoard
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const { latitude, longitude, destination, predictions, pointCoords } = state;
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
@@ -94,22 +145,52 @@ export default function App() {
         initialRegion={{
           latitude,
           longitude,
-          latitudeDelta: 0.015,
-          longitudeDelta: 0.0121,
+          latitudeDelta,
+          longitudeDelta,
         }}
         showsUserLocation={true}
-      />
+      >
+        <Polyline
+          coordinates={pointCoords}
+          strokeWidth={4}
+          strokeColor="red"
+          /**
+           * for some reason, i had this logic to allow Polyline to work in expo client android
+           *  https://stackoverflow.com/questions/68368208/mapview-polyline-in-react-native-with-expo-throws-an-error-im-testing-with-an
+           *  */
+          lineDashPattern={pointCoords.length > 0 ? null : [1]}
+        />
+      </MapView>
       <View style={styles.placePickerWrapper}>
         <TextInput
+          ref={searchPlaceInputRef}
           placeholder="Enter destination..."
           style={styles.destinationInput}
           value={destination}
           onChangeText={(destination) => onChangeDestination(destination)}
         />
         {predictions.map((prediction) => (
-          <Text style={styles.suggestions} key={prediction.place_id}>
-            {prediction.description}
-          </Text>
+          <TouchableOpacity
+            key={prediction.place_id}
+            onPress={() =>
+              /**
+               * SIDE NOTE: we did not use prediction.description because the description text is too long
+               * and can be too tedious when a user wants to clear the search input.
+               * so we use a shorter text formate which is prediction.structured_formatting.main_text
+               *
+               * Feel free to test the placePicker endpoint in postman to see all these values
+               * https://developers.google.com/maps/documentation/places/web-service/search-text
+               */
+              getRouteDirections(
+                prediction.place_id,
+                prediction.structured_formatting.main_text
+              )
+            }
+          >
+            <View style={styles.suggestions}>
+              <Text>{prediction.structured_formatting.main_text}</Text>
+            </View>
+          </TouchableOpacity>
         ))}
         {/** Dont forget to add a "Powered by Google" logo here. This is a must when using google APIs */}
       </View>
