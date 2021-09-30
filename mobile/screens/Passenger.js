@@ -12,10 +12,12 @@ import * as Location from "expo-location";
 import Constants from "expo-constants";
 import _ from "lodash";
 import PolyLine from "@mapbox/polyline";
+import io from "socket.io-client";
 import apiKey from "../google_api_key";
 
 const latitudeDelta = 0.015;
 const longitudeDelta = 0.0121;
+const SocketEndpoint = "http://127.0.0.1:3000";
 export default function Passenger() {
   const [state, setState] = React.useState({
     latitude: 37.78825,
@@ -144,6 +146,19 @@ export default function Passenger() {
     }
   };
 
+  const requestDriver = () => {
+    //request a websocket connection
+    const socket = io(SocketEndpoint, {
+      transports: ["websocket"],
+    });
+
+    //check for when we have connected
+    socket.on("connect", () => {
+      console.log("client connected");
+      //TODO: Request a Taxi
+    });
+  };
+
   const { latitude, longitude, destination, predictions, pointCoords } = state;
   return (
     <View style={styles.container}>
@@ -211,7 +226,7 @@ export default function Passenger() {
         /**We only show the this button after the user has selected a destination
          */
         pointCoords.length > 0 && (
-          <TouchableOpacity style={styles.bottomButton}>
+          <TouchableOpacity style={styles.bottomButton} onPress={requestDriver}>
             <View>
               <Text style={styles.bottomButtonText}> Find Driver</Text>
             </View>
