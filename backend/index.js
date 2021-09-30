@@ -16,9 +16,8 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
   console.log(`User Connected: ${socket.id}`);
 
-  socket.on("chat_message", (msg) => {
+  socket.on("taxi_request", (msg) => {
     console.log(msg);
-    io.emit("ping", msg); //we basically sent thesame message received in sockect conn back to the device :)
   });
 
   socket.on("disconnect", () => {

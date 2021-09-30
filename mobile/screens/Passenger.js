@@ -26,6 +26,7 @@ export default function Passenger() {
     destination: "", //the store the input from the textBox
     predictions: [],
     pointCoords: [],
+    routeResponse: {},
   });
   const mapRef = React.useRef();
   const searchPlaceInputRef = React.useRef();
@@ -130,6 +131,20 @@ export default function Passenger() {
         destination: destinationName,
         predictions: [], //we can now resets the predictions to empty because the user has pressed their suggestion
         pointCoords,
+        /**
+         * NOTE: the routeResponse looks like:
+         * 
+         * {
+              geocoded_waypoints: [ //contains the two objects that have placeIds for the startDestination and EndDestination of the passenger ],
+              routes: [...],
+              status: OK,
+            }
+         * The geocoded_waypoints[0] will be the used in the driver screen to calculate the route to the passenger 
+            they want to pick up. They can see how far away the passenger is and decide of they want to take the request or not
+
+          The geocoded_waypoints[1] will be used to know where the passenger want to be dropped
+         */
+        routeResponse: json,
       }));
       searchPlaceInputRef.current.blur(); //dismiss the keyBoard
 
@@ -154,8 +169,8 @@ export default function Passenger() {
 
     //check for when we have connected
     socket.on("connect", () => {
-      console.log("client connected");
-      //TODO: Request a Taxi
+      //send a driver request
+      socket.emit("taxi_request", state.routeResponse);
     });
   };
 
