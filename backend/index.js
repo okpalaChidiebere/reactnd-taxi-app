@@ -20,6 +20,10 @@ io.on("connection", (socket) => {
     console.log(msg);
   });
 
+  socket.on("looking_for_passenger", (msg) => {
+    console.log("Someone is looking for a Passenger");
+  });
+
   socket.on("disconnect", () => {
     console.log("User Disconnected", socket.id);
   });

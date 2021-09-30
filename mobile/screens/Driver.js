@@ -5,11 +5,13 @@ import MapView, { Polyline, Marker } from "react-native-maps";
 import * as Location from "expo-location";
 import Constants from "expo-constants";
 import PolyLine from "@mapbox/polyline";
+import io from "socket.io-client";
 import apiKey from "../google_api_key";
 import BottomButton from "../components/BottomButton";
 
 const latitudeDelta = 0.015;
 const longitudeDelta = 0.0121;
+const SocketEndpoint = "http://127.0.0.1:3000";
 export default function Driver() {
   const [state, setState] = React.useState({
     latitude: 37.78825,
@@ -105,6 +107,17 @@ export default function Driver() {
       ...currState,
       lookingForPassengers: true,
     }));
+
+    //request a websocket connection
+    const socket = io(SocketEndpoint, {
+      transports: ["websocket"],
+    });
+
+    //check for when we have connected
+    socket.on("connect", () => {
+      //send a looking for passenger event
+      socket.emit("looking_for_passenger"); //FYI: we are not sending any additional message
+    });
   };
 
   const {
