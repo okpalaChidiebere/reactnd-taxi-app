@@ -27,7 +27,7 @@ BottomButton.propTypes = {
 const styles = StyleSheet.create({
   bottomButton: {
     backgroundColor: "black",
-    marginTop: "auto",
+    marginTop: "auto", //moves the button down to the bottom. Another way is to use the absolute property and bottom of zero value
     margin: 20,
     padding: 15,
     paddingLeft: 30,

@@ -6,6 +6,7 @@ import {
   View,
   TextInput,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import MapView, { Polyline, Marker } from "react-native-maps";
 import * as Location from "expo-location";
@@ -13,6 +14,7 @@ import Constants from "expo-constants";
 import _ from "lodash";
 import PolyLine from "@mapbox/polyline";
 import io from "socket.io-client";
+import BottomButton from "../components/BottomButton";
 import apiKey from "../google_api_key";
 
 const latitudeDelta = 0.015;
@@ -27,6 +29,7 @@ export default function Passenger() {
     predictions: [],
     pointCoords: [],
     routeResponse: {},
+    lookingForDriver: false,
   });
   const mapRef = React.useRef();
   const searchPlaceInputRef = React.useRef();
@@ -162,6 +165,11 @@ export default function Passenger() {
   };
 
   const requestDriver = () => {
+    setState((currState) => ({
+      ...currState,
+      lookingForDriver: true,
+    }));
+
     //request a websocket connection
     const socket = io(SocketEndpoint, {
       transports: ["websocket"],
@@ -174,7 +182,14 @@ export default function Passenger() {
     });
   };
 
-  const { latitude, longitude, destination, predictions, pointCoords } = state;
+  const {
+    latitude,
+    longitude,
+    destination,
+    predictions,
+    pointCoords,
+    lookingForDriver,
+  } = state;
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
@@ -241,11 +256,18 @@ export default function Passenger() {
         /**We only show the this button after the user has selected a destination
          */
         pointCoords.length > 0 && (
-          <TouchableOpacity style={styles.bottomButton} onPress={requestDriver}>
-            <View>
-              <Text style={styles.bottomButtonText}> Find Driver</Text>
-            </View>
-          </TouchableOpacity>
+          <BottomButton
+            onPressFunction={requestDriver}
+            buttonText={"REQUEST 🚗"}
+          >
+            {lookingForDriver && (
+              <ActivityIndicator
+                animating={lookingForDriver}
+                size="large"
+                color={"#fff"}
+              />
+            )}
+          </BottomButton>
         )
       }
     </View>
@@ -284,19 +306,5 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     marginLeft: 5,
     marginRight: 5,
-  },
-  bottomButton: {
-    backgroundColor: "black",
-    marginTop: "auto", //moves the button down to the bottom. Another way is to use the absolute property and bottom of zero value
-    margin: 20,
-    padding: 15,
-    paddingLeft: 30,
-    paddingRight: 30,
-    alignSelf: "center",
-  },
-  bottomButtonText: {
-    fontSize: 20,
-    color: "white",
-    fontWeight: "600",
   },
 });

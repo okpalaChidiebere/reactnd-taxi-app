@@ -1,6 +1,6 @@
 import { StatusBar } from "expo-status-bar";
 import React from "react";
-import { StyleSheet, View, ActivityIndicator } from "react-native";
+import { StyleSheet, View, ActivityIndicator, Image } from "react-native";
 import MapView, { Polyline, Marker } from "react-native-maps";
 import * as Location from "expo-location";
 import Constants from "expo-constants";
@@ -167,7 +167,12 @@ export default function Driver() {
         />
         {pointCoords.length > 0 && ( //we only set the marker when the user has selected a place
           /** we set the marker at the very last point */
-          <Marker coordinate={pointCoords[pointCoords.length - 1]} />
+          <Marker coordinate={pointCoords[pointCoords.length - 1]}>
+            <Image
+              style={{ width: 40, height: 40 }}
+              source={require("../images/person-marker.png")}
+            />
+          </Marker>
         )}
       </MapView>
       <BottomButton
