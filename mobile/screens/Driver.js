@@ -17,12 +17,11 @@ export default function Driver() {
     latitude: 37.78825,
     longitude: -122.4324,
     errorMsg: null, //use to know if we successfully get the user current location
-    destination: "", //the store the input from the textBox
     pointCoords: [],
     lookingForPassengers: false, //used to keep track of where to show activityIndicator as the driver is looking for passengers or not
+    passengerSearchText: "FIND PASSENGERS 👥",
   });
   const mapRef = React.useRef();
-  const passengerSearchText = React.useRef("FIND PASSENGERS 👥");
 
   React.useEffect(() => {
     (async () => {
@@ -56,7 +55,7 @@ export default function Driver() {
   }, []);
 
   /** We used this to show the routes to the passenger */
-  const getRouteDirections = async (destinationPlaceId, destinationName) => {
+  const getRouteDirections = async (destinationPlaceId) => {
     try {
       /**
        * FYI: we are ble to use thesame key for PlacePicker and directions API from Google because we
@@ -84,7 +83,6 @@ export default function Driver() {
 
       setState((currState) => ({
         ...currState,
-        destination: destinationName,
         predictions: [], //we can now resets the predictions to empty because the user has pressed their suggestion
         pointCoords,
       }));
@@ -118,14 +116,30 @@ export default function Driver() {
       //send a looking for passenger event
       socket.emit("looking_for_passenger"); //FYI: we are not sending any additional message
     });
+
+    /** we receive taxi request send by passengers here. We receive a passenger location which is the 'routeResponse'
+     *
+     * - routeResponse.geocoded_waypoints[0] is where the passenger is located
+     * - routeResponse.geocoded_waypoints[1] is where the passenger wants to go to
+     *
+     */
+    socket.on("taxi_request", (msg) => {
+      //console.log(msg);
+      getRouteDirections(msg.geocoded_waypoints[0].place_id);
+      setState((currState) => ({
+        ...currState,
+        lookingForPassengers: false,
+        passengerSearchText: "FOUND PASSENGER!",
+      }));
+    });
   };
 
   const {
     latitude,
     longitude,
-    destination,
     pointCoords,
     lookingForPassengers,
+    passengerSearchText,
   } = state;
   return (
     <View style={styles.container}>
@@ -158,10 +172,14 @@ export default function Driver() {
       </MapView>
       <BottomButton
         onPressFunction={handleFindPassenger}
-        buttonText={passengerSearchText.current}
+        buttonText={passengerSearchText}
       >
         {lookingForPassengers && (
-          <ActivityIndicator animating={lookingForPassengers} size="large" />
+          <ActivityIndicator
+            animating={lookingForPassengers}
+            size="large"
+            color={"#fff"}
+          />
         )}
       </BottomButton>
     </View>
