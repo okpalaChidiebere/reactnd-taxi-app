@@ -1,6 +1,13 @@
 import { StatusBar } from "expo-status-bar";
 import React from "react";
-import { StyleSheet, View, ActivityIndicator, Image } from "react-native";
+import {
+  StyleSheet,
+  View,
+  ActivityIndicator,
+  Image,
+  Linking,
+  Platform,
+} from "react-native";
 import MapView, { Polyline, Marker } from "react-native-maps";
 import * as Location from "expo-location";
 import Constants from "expo-constants";
@@ -56,7 +63,7 @@ export default function Driver() {
     })();
   }, []);
 
-  /** We used this to show the routes to the passenger */
+  /** We used this to show the routes to the passenger location the driver wants to pick up */
   const getRouteDirections = async (destinationPlaceId) => {
     try {
       /**
@@ -138,12 +145,32 @@ export default function Driver() {
     });
   };
 
-  //Send driver's location to a passenger
   const handleAcceptPassengerRequest = () => {
+    //Send driver's location to the passenger they decided to go pick up
     socket.current.emit("driver_location", {
       latitude: state.latitude,
       longitude: state.longitude,
     });
+
+    /**
+     * Remember we has initially store the coordinates (from start to end destination) of the passenger when
+     * the driver was deciding whether to go pick up a passenger or not if they are not too far away.
+     *
+     * We are just accessing the end destination here
+     */
+    const passengerLocation = state.pointCoords[state.pointCoords.length - 1];
+
+    if (Platform.OS === "ios") {
+      //learn more: https://developer.apple.com/library/archive/featuredarticles/iPhoneURLScheme_Reference/MapLinks/MapLinks.html
+      Linking.openURL(
+        `maps://?daddr=${passengerLocation.latitude},${passengerLocation.longitude}`
+      );
+    } else {
+      //learn more: https://developers.google.com/maps/documentation/urls/android-intents#launch_turn-by-turn_navigation
+      Linking.openURL(
+        `google.navigation:q=${passengerLocation.latitude},${passengerLocation.longitude}`
+      );
+    }
   };
 
   const bottomButtonFunction = React.useCallback(() => {
@@ -157,6 +184,7 @@ export default function Driver() {
     state.passengerFound,
     state.latitude, // we need this method to re-render to have the updated driver location
     state.latitude,
+    state.pointCoords, //when we are deciding whether we want to pick up the passenger or not, we still need this updated value
   ]);
 
   const {
