@@ -7,6 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import MapView, { Polyline, Marker } from "react-native-maps";
 import * as Location from "expo-location";
@@ -20,6 +21,12 @@ import apiKey from "../google_api_key";
 const latitudeDelta = 0.015;
 const longitudeDelta = 0.0121;
 const SocketEndpoint = "http://127.0.0.1:3000";
+const edgePadding = {
+  top: Constants.statusBarHeight + 20, //we dont want the display directions or markers to be under the search bar
+  bottom: 20,
+  left: 50,
+  right: 50,
+};
 export default function Passenger() {
   const [state, setState] = React.useState({
     latitude: 37.78825,
@@ -30,6 +37,8 @@ export default function Passenger() {
     pointCoords: [],
     routeResponse: {},
     lookingForDriver: false,
+    driverIsOnTheWay: false, //we use this to know when to show the driver icon marker on our map after a driver accepts this request
+    driverLocation: {}, //an object containing the latitude and longitude of the user
   });
   const mapRef = React.useRef();
   const searchPlaceInputRef = React.useRef();
@@ -157,7 +166,7 @@ export default function Passenger() {
       You can disable the animation and set edgePadding. The second params is optional
       */
       mapRef.current.fitToCoordinates(pointCoords, {
-        edgePadding: { top: 20, bottom: 20, left: 50, right: 50 },
+        edgePadding,
       });
     } catch (error) {
       console.log(error);
@@ -187,7 +196,16 @@ export default function Passenger() {
       setState((currState) => ({
         ...currState,
         lookingForDriver: false,
+        driverLocation,
+        driverIsOnTheWay: true,
       }));
+
+      /** Start fitting the new driver coming to pick up the passenger on screen */
+      let newPointCoordsWithDriver = [...state.pointCoords, driverLocation]; // As we include the driver location, the map will re-render to display all markers
+      mapRef.current.fitToCoordinates(newPointCoordsWithDriver, {
+        edgePadding,
+      });
+      /** End fitting driver location in screen. At this point the passenger can see the driver location */
     });
   };
 
@@ -198,6 +216,8 @@ export default function Passenger() {
     predictions,
     pointCoords,
     lookingForDriver,
+    driverIsOnTheWay,
+    driverLocation,
   } = state;
   return (
     <View style={styles.container}>
@@ -226,6 +246,14 @@ export default function Passenger() {
         {pointCoords.length > 0 && ( //we only set the marker when the user has selected a place
           /** we set the marker at the very last point */
           <Marker coordinate={pointCoords[pointCoords.length - 1]} />
+        )}
+        {driverIsOnTheWay && (
+          <Marker coordinate={driverLocation}>
+            <Image
+              source={require("../images/carIcon.png")}
+              style={{ width: 40, height: 40 }}
+            />
+          </Marker>
         )}
       </MapView>
       <View style={styles.placePickerWrapper}>

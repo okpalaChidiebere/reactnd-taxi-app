@@ -106,6 +106,7 @@ export default function Driver() {
     setState((currState) => ({
       ...currState,
       lookingForPassengers: true,
+      passengerSearchText: "FINDING PASSENGERS...",
     }));
 
     //request a websocket connection
@@ -151,7 +152,12 @@ export default function Driver() {
     } else if (!state.lookingForPassengers && !state.passengerFound) {
       handleFindPassenger();
     }
-  }, [state.lookingForPassengers, state.passengerFound]);
+  }, [
+    state.lookingForPassengers,
+    state.passengerFound,
+    state.latitude, // we need this method to re-render to have the updated driver location
+    state.latitude,
+  ]);
 
   const {
     latitude,
