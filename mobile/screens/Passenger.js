@@ -180,6 +180,15 @@ export default function Passenger() {
       //send a driver request
       socket.emit("taxi_request", state.routeResponse);
     });
+
+    //we receive the location of whatever driver accepts our taxi request
+    socket.on("driver_location", (driverLocation) => {
+      //hide the activity indicator on the "request driver" button
+      setState((currState) => ({
+        ...currState,
+        lookingForDriver: false,
+      }));
+    });
   };
 
   const {

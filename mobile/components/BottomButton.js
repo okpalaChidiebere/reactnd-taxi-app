@@ -20,7 +20,7 @@ export default function BottomButton({
 }
 
 BottomButton.propTypes = {
-  onPressFunction: PropTypes.func.isRequired,
+  onPressFunction: PropTypes.func,
   buttonText: PropTypes.string.isRequired,
 };
 

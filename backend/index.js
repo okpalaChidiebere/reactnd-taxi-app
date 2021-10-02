@@ -13,14 +13,20 @@ const io = new Server(server, {
 });
 
 let taxiRequest = null; //used to cache a driver request looking for passengers
+let passengerRequest = null; //used to cache a passenger request looking for a drivers.
 
 //when a user connects to our socket server
 io.on("connection", (socket) => {
   console.log(`User Connected: ${socket.id}`);
 
+  //listen for when a passenger send in a request that he is looking for a driver
   socket.on("taxi_request", (msg) => {
     //console.log(msg);
     console.log("someone is looking for a taxi");
+
+    //we save the current passenger connection looking for a driver
+    passengerRequest = socket;
+
     if (taxiRequest != null) {
       /**
        * We send back to the driver a passenger pickup request
@@ -32,9 +38,16 @@ io.on("connection", (socket) => {
     }
   });
 
+  //listen for when a driver send in a request that he is looking for a passenger
   socket.on("looking_for_passenger", (msg) => {
     console.log("Someone is looking for a Passenger");
-    taxiRequest = socket; //we save the current driver connection
+    taxiRequest = socket; //we save the current driver connection looking for a passenger
+  });
+
+  //Where we listen for when the driver accepts the passenger looking for a taxi
+  socket.on("driver_location", (msg) => {
+    //we send to a passenger, the driver location. The msg contains an object with longitude and latitude values
+    passengerRequest.emit("driver_location", msg);
   });
 
   socket.on("disconnect", () => {

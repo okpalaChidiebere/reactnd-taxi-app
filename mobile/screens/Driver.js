@@ -20,8 +20,10 @@ export default function Driver() {
     pointCoords: [],
     lookingForPassengers: false, //used to keep track of where to show activityIndicator as the driver is looking for passengers or not
     passengerSearchText: "FIND PASSENGERS 👥",
+    passengerFound: false,
   });
   const mapRef = React.useRef();
+  const socket = React.useRef();
 
   React.useEffect(() => {
     (async () => {
@@ -107,14 +109,14 @@ export default function Driver() {
     }));
 
     //request a websocket connection
-    const socket = io(SocketEndpoint, {
+    socket.current = io(SocketEndpoint, {
       transports: ["websocket"],
     });
 
     //check for when we have connected
-    socket.on("connect", () => {
+    socket.current.on("connect", () => {
       //send a looking for passenger event
-      socket.emit("looking_for_passenger"); //FYI: we are not sending any additional message
+      socket.current.emit("looking_for_passenger"); //FYI: we are not sending any additional message
     });
 
     /** we receive taxi request send by passengers here. We receive a passenger location which is the 'routeResponse'
@@ -123,16 +125,33 @@ export default function Driver() {
      * - routeResponse.geocoded_waypoints[1] is where the passenger wants to go to
      *
      */
-    socket.on("taxi_request", (msg) => {
+    socket.current.on("taxi_request", (msg) => {
       //console.log(msg);
       getRouteDirections(msg.geocoded_waypoints[0].place_id);
       setState((currState) => ({
         ...currState,
         lookingForPassengers: false,
-        passengerSearchText: "FOUND PASSENGER!",
+        passengerSearchText: "FOUND PASSENGER! ACCEPT RIDE?",
+        passengerFound: true,
       }));
     });
   };
+
+  //Send driver's location to a passenger
+  const handleAcceptPassengerRequest = () => {
+    socket.current.emit("driver_location", {
+      latitude: state.latitude,
+      longitude: state.longitude,
+    });
+  };
+
+  const bottomButtonFunction = React.useCallback(() => {
+    if (state.passengerFound) {
+      handleAcceptPassengerRequest();
+    } else if (!state.lookingForPassengers && !state.passengerFound) {
+      handleFindPassenger();
+    }
+  }, [state.lookingForPassengers, state.passengerFound]);
 
   const {
     latitude,
@@ -176,7 +195,7 @@ export default function Driver() {
         )}
       </MapView>
       <BottomButton
-        onPressFunction={handleFindPassenger}
+        onPressFunction={bottomButtonFunction}
         buttonText={passengerSearchText}
       >
         {lookingForPassengers && (
