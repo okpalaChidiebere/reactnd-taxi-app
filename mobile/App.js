@@ -3,6 +3,10 @@ import React from "react";
 import { StyleSheet, View, Button } from "react-native";
 import Driver from "./screens/Driver";
 import Passenger from "./screens/Passenger";
+import GenericContainer from "./components/GenericContainer";
+
+const DriverWithGenericContainer = GenericContainer(Driver);
+const PassengerWithGenericContainer = GenericContainer(Passenger);
 
 export default function App() {
   const [state, setState] = React.useState({
@@ -13,11 +17,11 @@ export default function App() {
   const { isDriver, isPassenger } = state;
 
   if (isDriver) {
-    return <Driver />;
+    return <DriverWithGenericContainer />;
   }
 
   if (isPassenger) {
-    return <Passenger />;
+    return <PassengerWithGenericContainer />;
   }
 
   return (
