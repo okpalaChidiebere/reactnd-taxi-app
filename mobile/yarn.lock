@@ -2904,6 +2904,15 @@ expo-structured-headers@~1.1.1:
   resolved "https://registry.yarnpkg.com/expo-structured-headers/-/expo-structured-headers-1.1.1.tgz#95e28ff8686a2c06fe6ad1decdbb94cc44716683"
   integrity sha512-OxDsWTDxwAhfW82DDXYTcT9UzSk2fYUb3YHiz/tQ1MObQMh0QVHgxcTe9vvtzguc6O4A2Y+f8tO1g3LcUEN2lg==
 
+expo-task-manager@~9.2.2:
+  version "9.2.2"
+  resolved "https://registry.yarnpkg.com/expo-task-manager/-/expo-task-manager-9.2.2.tgz#1c4419114ca254223d73cec4e23752c45cc9270d"
+  integrity sha512-GDObZYoCT1bwYXYtT9RinRhR7Y+mCy6DvO7OvRFW3hgxHVXvAM8YFA8jr3airY0XF73aT35/nFnOe+MFCELXFA==
+  dependencies:
+    "@expo/config-plugins" "^3.0.0"
+    expo-modules-core "~0.2.0"
+    unimodules-app-loader "~2.2.0"
+
 expo-updates-interface@~0.2.2:
   version "0.2.2"
   resolved "https://registry.yarnpkg.com/expo-updates-interface/-/expo-updates-interface-0.2.2.tgz#f754ce2c562f427d87893a9d22a4cbab39e0defd"
@@ -5657,7 +5666,7 @@ snapdragon@^0.8.1:
     source-map-resolve "^0.5.0"
     use "^3.1.0"
 
-socket.io-client@4.2.0:
+socket.io-client@^4.2.0:
   version "4.2.0"
   resolved "https://registry.yarnpkg.com/socket.io-client/-/socket.io-client-4.2.0.tgz#195feed3de40283b1ae3f7d02cf91d3eb2c905c1"
   integrity sha512-3GJ2KMh7inJUNAOjgf8NaKJZJa9uRyfryh2LrVJyKyxmzoXlfW9DeDNqylJn0ovOFt4e/kRLNWzMt/YqqEWYSA==

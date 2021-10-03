@@ -29,8 +29,8 @@ const edgePadding = {
 };
 export default function Passenger() {
   const [state, setState] = React.useState({
-    latitude: 37.78825,
-    longitude: -122.4324,
+    latitude: null,
+    longitude: null,
     errorMsg: null, //use to know if we successfully get the user current location
     destination: "", //the store the input from the textBox
     predictions: [],
@@ -42,6 +42,7 @@ export default function Passenger() {
   });
   const mapRef = React.useRef();
   const searchPlaceInputRef = React.useRef();
+  const watchId = React.useRef();
 
   React.useEffect(() => {
     (async () => {
@@ -54,24 +55,42 @@ export default function Passenger() {
         return;
       }
 
-      let location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
-      setState((currState) => ({
-        ...currState,
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      }));
-      mapRef.current.animateToRegion(
+      /**
+       * We want the Map to follow the user as they are in motion that why we use Location.watchPositionAsync()
+       * over Location.getCurrentPositionAsync()
+       *
+       * Anytime the lat and lng updates the initialRegion prop of the maps updates. So even though the user
+       * touch gesture(like zoomIn or zoomOut) positions on the map will still be maintained
+       *  */
+      watchId.current = await Location.watchPositionAsync(
         {
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-          latitudeDelta, //must specify to work properly on Android
-          longitudeDelta, //must specify to work properly on Android
+          accuracy: Location.Accuracy.High,
+          timeInterval: 2000, //we want to location to update as quickly as possible
+          distanceInterval: 1,
         },
-        1000
+        ({ coords }) => {
+          setState((currState) => ({
+            ...currState,
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+          }));
+          /*mapRef.current.animateToRegion(
+            {
+              latitude: coords.latitude,
+              longitude: coords.longitude,
+              latitudeDelta, //must specify to work properly on Android
+              longitudeDelta, //must specify to work properly on Android
+            },
+            1000
+          );*/
+        }
       );
     })();
+    return async () => {
+      if (watchId.current) {
+        watchId.current.remove(); //unsubscribe the watch event
+      }
+    };
   }, []);
 
   /** This method searches and set the location that the user wants to go to */
@@ -203,7 +222,7 @@ export default function Passenger() {
       /** Start fitting the new driver coming to pick up the passenger on screen */
       let newPointCoordsWithDriver = [...state.pointCoords, driverLocation]; // As we include the driver location, the map will re-render to display all markers
       mapRef.current.fitToCoordinates(newPointCoordsWithDriver, {
-        edgePadding,
+        edgePadding: { ...edgePadding, top: 140, bottom: 140 },
       });
       /** End fitting driver location in screen. At this point the passenger can see the driver location */
     });
@@ -219,6 +238,16 @@ export default function Passenger() {
     driverIsOnTheWay,
     driverLocation,
   } = state;
+
+  if (longitude === null || latitude === null) {
+    //user hans't given us any permission yet
+    return (
+      //we just show a loading indicator
+      <View style={styles.container}>
+        <ActivityIndicator style={{ marginTop: 30 }} color="black" />
+      </View>
+    );
+  }
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />

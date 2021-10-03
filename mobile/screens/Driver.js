@@ -7,7 +7,11 @@ import {
   Image,
   Linking,
   Platform,
+  Text,
+  TouchableOpacity,
 } from "react-native";
+import { Foundation } from "@expo/vector-icons";
+import * as TaskManager from "expo-task-manager";
 import MapView, { Polyline, Marker } from "react-native-maps";
 import * as Location from "expo-location";
 import Constants from "expo-constants";
@@ -19,49 +23,144 @@ import BottomButton from "../components/BottomButton";
 const latitudeDelta = 0.015;
 const longitudeDelta = 0.0121;
 const SocketEndpoint = "http://127.0.0.1:3000";
+const LOCATION_TASK_NAME = "background-location-task";
+
+//request a websocket connection
+const socket = io(SocketEndpoint, {
+  transports: ["websocket"],
+});
+
+TaskManager.unregisterAllTasksAsync();
+
+TaskManager.defineTask(LOCATION_TASK_NAME, ({ data: { locations }, error }) => {
+  if (error) {
+    console.log(error);
+    return;
+  }
+
+  for (let location of locations) {
+    //Send driver's location to the passenger they decided to go pick up
+    socket.emit("driver_location", {
+      latitude: location.coords.latitude,
+      longitude: location.coords.longitude,
+    });
+  }
+});
+
 export default function Driver() {
   const [state, setState] = React.useState({
-    latitude: 37.78825,
-    longitude: -122.4324,
-    errorMsg: null, //use to know if we successfully get the user current location
+    latitude: null,
+    longitude: null,
     pointCoords: [],
     lookingForPassengers: false, //used to keep track of where to show activityIndicator as the driver is looking for passengers or not
     passengerSearchText: "FIND PASSENGERS 👥",
     passengerFound: false,
+    bgLocationPermissionStatus: null,
+    fgLocationPermissionStatus: null,
   });
   const mapRef = React.useRef();
-  const socket = React.useRef();
+  const watchId = React.useRef();
+  const currLatitudeDelta = React.useRef(latitudeDelta);
+  const currLongitudeDelta = React.useRef(longitudeDelta);
 
   React.useEffect(() => {
     (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        setState((currState) => ({
-          ...currState,
-          errorMsg: "Permission to access location was denied",
-        }));
-        return;
-      }
+      /** Be sure to requestForPermissions when the App.js UI loads. You want the user to be able to use
+       * some part of your app that need permissions to display data in the UI */
+      const { status: bgLocationPermissionStatus } =
+        await Location.getForegroundPermissionsAsync();
 
-      let location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
+      const { status: fgLocationPermissionStatus } =
+        await Location.getBackgroundPermissionsAsync();
+
       setState((currState) => ({
         ...currState,
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
+        bgLocationPermissionStatus,
+        fgLocationPermissionStatus,
       }));
-      mapRef.current.animateToRegion(
-        {
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-          latitudeDelta, //must specify to work properly on Android
-          longitudeDelta, //must specify to work properly on Android
-        },
-        1000
-      );
+
+      if (
+        bgLocationPermissionStatus === Location.PermissionStatus.GRANTED &&
+        fgLocationPermissionStatus === Location.PermissionStatus.GRANTED
+      ) {
+        setDriverLocation();
+
+        /*let tasks = await TaskManager.getRegisteredTasksAsync();
+        if (tasks.find((f) => f.taskName === LOCATION_TASK_NAME) !== null) {
+          //console.log("Registering task")
+
+          TaskManager.unregisterTaskAsync(LOCATION_TASK_NAME);
+        }*/
+        //await TaskManager.unregisterAllTasksAsync();
+      }
     })();
+
+    return async () => {
+      await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
+      // await TaskManager.unregisterTaskAsync(LOCATION_TASK_NAME);
+      if (watchId.current) {
+        watchId.current.remove(); //unsubscribe the watch event
+      }
+    };
   }, []);
+
+  const askPermission = async () => {
+    const { status: bgLocationPermissionStatus } =
+      await Location.requestBackgroundPermissionsAsync();
+    bgLocationPermissionStatus = bgResp.status;
+
+    const { status: fgLocationPermissionStatus } =
+      await Location.requestForegroundPermissionsAsync();
+    fgLocationPermissionStatus = fgResp.status;
+
+    console.log(bgLocationPermissionStatus, fgLocationPermissionStatus);
+
+    setState((currState) => ({
+      ...currState,
+      bgLocationPermissionStatus,
+      fgLocationPermissionStatus,
+    }));
+
+    if (
+      bgLocationPermissionStatus === Location.PermissionStatus.GRANTED &&
+      fgLocationPermissionStatus === Location.PermissionStatus.GRANTED
+    ) {
+      setDriverLocation();
+    }
+  };
+
+  const setDriverLocation = async () => {
+    /**
+     * We want the Map to follow the user as they are in motion that why we use Location.watchPositionAsync()
+     * over Location.getCurrentPositionAsync()
+     *
+     * Anytime the lat and lng updates the initialRegion prop of the maps updates. So even though the user
+     * touch gesture(like zoomIn or zoomOut) positions on the map will still be maintained
+     *  */
+    watchId.current = await Location.watchPositionAsync(
+      {
+        accuracy: Location.Accuracy.High,
+        timeInterval: 100, //we want to location to update as quickly as possible
+        distanceInterval: 1,
+      },
+      ({ coords }) => {
+        setState((currState) => ({
+          ...currState,
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+        }));
+        mapRef.current.animateToRegion(
+          {
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            latitudeDelta: currLatitudeDelta.current, //must specify to work properly on Android
+            longitudeDelta: currLongitudeDelta.current, //must specify to work properly on Android
+          },
+          1000
+        );
+      }
+    );
+  };
 
   /** We used this to show the routes to the passenger location the driver wants to pick up */
   const getRouteDirections = async (destinationPlaceId) => {
@@ -116,16 +215,8 @@ export default function Driver() {
       passengerSearchText: "FINDING PASSENGERS...",
     }));
 
-    //request a websocket connection
-    socket.current = io(SocketEndpoint, {
-      transports: ["websocket"],
-    });
-
-    //check for when we have connected
-    socket.current.on("connect", () => {
-      //send a looking for passenger event
-      socket.current.emit("looking_for_passenger"); //FYI: we are not sending any additional message
-    });
+    //send a looking for passenger event
+    socket.emit("looking_for_passenger"); //FYI: we are not sending any additional message
 
     /** we receive taxi request send by passengers here. We receive a passenger location which is the 'routeResponse'
      *
@@ -133,7 +224,7 @@ export default function Driver() {
      * - routeResponse.geocoded_waypoints[1] is where the passenger wants to go to
      *
      */
-    socket.current.on("taxi_request", (msg) => {
+    socket.on("taxi_request", (msg) => {
       //console.log(msg);
       getRouteDirections(msg.geocoded_waypoints[0].place_id);
       setState((currState) => ({
@@ -145,12 +236,26 @@ export default function Driver() {
     });
   };
 
-  const handleAcceptPassengerRequest = () => {
-    //Send driver's location to the passenger they decided to go pick up
-    socket.current.emit("driver_location", {
-      latitude: state.latitude,
-      longitude: state.longitude,
-    });
+  const handleAcceptPassengerRequest = async () => {
+    const LocationFetchStatus = await Location.hasStartedLocationUpdatesAsync(
+      LOCATION_TASK_NAME
+    );
+
+    if (!LocationFetchStatus) {
+      await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
+        accuracy: Location.Accuracy.BestForNavigation,
+        timeInterval: 10000,
+        distanceInterval: 50,
+        deferredUpdatesInterval: 5000,
+        deferredUpdatesDistance: 50,
+        foregroundService: {
+          notificationTitle: "Taxi App",
+          notificationBody: "Location is used when App is in background",
+        },
+        activityType: Location.ActivityType.AutomotiveNavigation,
+        showsBackgroundLocationIndicator: true,
+      });
+    }
 
     /**
      * Remember we has initially store the coordinates (from start to end destination) of the passenger when
@@ -193,7 +298,56 @@ export default function Driver() {
     pointCoords,
     lookingForPassengers,
     passengerSearchText,
+    bgLocationPermissionStatus,
+    fgLocationPermissionStatus,
   } = state;
+
+  if (
+    bgLocationPermissionStatus === null ||
+    fgLocationPermissionStatus === null ||
+    latitude === null
+  ) {
+    //user hans't given us any permission yet
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator style={{ marginTop: 30 }} color={"black"} />
+      </View>
+    ); //we just show a loading indicator
+  }
+
+  if (
+    bgLocationPermissionStatus === Location.PermissionStatus.DENIED ||
+    fgLocationPermissionStatus === Location.PermissionStatus.DENIED
+  ) {
+    //Here we ask for permission and the user did not giev our app permission
+    return (
+      <View style={styles.container}>
+        <Foundation name="alert" size={50} />
+        <Text>
+          You denied your location. You can fix this by visiting your settings
+          and enabling location services for this app.
+        </Text>
+      </View>
+    );
+  }
+
+  if (
+    bgLocationPermissionStatus === Location.PermissionStatus.UNDETERMINED ||
+    fgLocationPermissionStatus === Location.PermissionStatus.UNDETERMINED
+  ) {
+    return (
+      <View style={styles.container}>
+        <Foundation name="alert" size={50} />
+        <Text>
+          You need to enable location services for the Driver UI of this app.
+        </Text>
+        <TouchableOpacity style={styles.button} onPress={askPermission}>
+          <Text style={styles.buttonText}>Enable</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
@@ -205,6 +359,16 @@ export default function Driver() {
           longitude,
           latitudeDelta,
           longitudeDelta,
+        }}
+        onRegionChange={(region) => {
+          if (
+            region.latitudeDelta !== currLatitudeDelta.current ||
+            region.longitudeDelta !== currLongitudeDelta.current
+          ) {
+            //user zoomed
+            currLatitudeDelta.current = region.latitudeDelta;
+            currLongitudeDelta.current = region.longitudeDelta;
+          }
         }}
         showsUserLocation={true}
       >
@@ -276,5 +440,16 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     marginLeft: 5,
     marginRight: 5,
+  },
+  button: {
+    padding: 10,
+    backgroundColor: "black",
+    alignSelf: "center",
+    borderRadius: 5,
+    margin: 20,
+  },
+  buttonText: {
+    color: "white",
+    fontSize: 20,
   },
 });

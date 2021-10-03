@@ -46,6 +46,7 @@ io.on("connection", (socket) => {
 
   //Where we listen for when the driver accepts the passenger looking for a taxi
   socket.on("driver_location", (msg) => {
+    //console.log(msg); //you can also see a driver location being sent over to passenger in realtime as the driver is heading to the passenger direction
     //we send to a passenger, the driver location. The msg contains an object with longitude and latitude values
     passengerRequest.emit("driver_location", msg);
   });
@@ -56,5 +57,5 @@ io.on("connection", (socket) => {
 });
 
 server.listen(port, () => {
-  console.log("listening on *:3000");
+  console.log(`listening on *:${port}`);
 });
