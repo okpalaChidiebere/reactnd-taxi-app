@@ -16,6 +16,8 @@ const GenericContainer = (WrappedComponent) => (props) => {
     routeResponse: {},
   });
   React.useEffect(() => {
+    /** We can moved over requesting permission here as well :) */
+
     return async () => {
       if (watchId.current) {
         watchId.current.remove(); //unsubscribe the watch event
