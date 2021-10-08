@@ -5,7 +5,7 @@ import LoginForm from "../components/LoginForm";
 import * as yup from "yup";
 import { loginUser, signUp } from "../NetworkUtils";
 
-export default function Login() {
+export default function Login({ handleSetToken }) {
   const [errorMsg, setErrorMsg] = React.useState("");
   const [formType, setFormType] = React.useState();
 
@@ -16,6 +16,12 @@ export default function Login() {
   const formValues = {
     email: "",
     password: "",
+  };
+
+  const handleOnAuthSuccess = (token) => {
+    Alert.alert(JSON.stringify(token));
+    setErrorMsg("");
+    handleSetToken("token", token);
   };
 
   const passwordRegExr = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{5,}$/;
@@ -31,20 +37,16 @@ export default function Login() {
   });
 
   const handleFormSubmit = async (values, { setSubmitting, setFieldError }) => {
+    let result;
     setSubmitting(true);
     try {
-      let result;
       switch (formType) {
         case "SIGN_IN":
           result = await loginUser(values.email, values.password);
-          Alert.alert(JSON.stringify(result.token));
-          setErrorMsg("");
           break;
         case "SIGN_UP":
           await signUp(values.email, values.password);
           result = await loginUser(values.email, values.password);
-          Alert.alert("", result.token);
-          setErrorMsg("");
           break;
       }
     } catch (e) {
@@ -53,6 +55,7 @@ export default function Login() {
       //console.log("Error", e.message);
     } finally {
       setSubmitting(false);
+      if (result?.token) handleOnAuthSuccess(result.token);
     }
   };
 

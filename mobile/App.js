@@ -10,12 +10,22 @@ const DriverWithGenericContainer = GenericContainer(Driver);
 const PassengerWithGenericContainer = GenericContainer(Passenger);
 
 export default function App() {
+  /** Ideally, you may want theses values to be in your redux store */
   const [state, setState] = React.useState({
     isDriver: false,
     isPassenger: false,
+    token: "",
   });
 
-  const { isDriver, isPassenger } = state;
+  const handleSetState = (name, value) => {
+    setState((currState) => ({ ...currState, [name]: value }));
+  };
+
+  const { isDriver, isPassenger, token } = state;
+
+  if (token === "") {
+    return <Login handleSetToken={handleSetState} />;
+  }
 
   if (isDriver) {
     return <DriverWithGenericContainer />;
@@ -25,7 +35,16 @@ export default function App() {
     return <PassengerWithGenericContainer />;
   }
 
-  return <Login />;
+  return (
+    <View style={styles.container}>
+      <StatusBar style="auto" />
+      <Button
+        title="Passenger"
+        onPress={() => handleSetState("isPassenger", true)}
+      />
+      <Button title="Driver" onPress={() => handleSetState("isDriver", true)} />
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -35,20 +54,3 @@ const styles = StyleSheet.create({
     marginTop: 50,
   },
 });
-/**
- * <View style={styles.container}>
-      <StatusBar style="auto" />
-      <Button
-        title="Passenger"
-        onPress={() =>
-          setState((currState) => ({ ...currState, isPassenger: true }))
-        }
-      />
-      <Button
-        title="Driver"
-        onPress={() =>
-          setState((currState) => ({ ...currState, isDriver: true }))
-        }
-      />
-    </View>
- */
