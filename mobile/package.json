@@ -15,7 +15,7 @@
     "expo-task-manager": "~9.2.2",
     "expo-updates": "~0.8.1",
     "formik": "^2.2.9",
-    "lodash": "^4.17.21",
+    "lodash.debounce": "^4.0.8",
     "react": "16.13.1",
     "react-dom": "16.13.1",
     "react-native": "~0.63.4",

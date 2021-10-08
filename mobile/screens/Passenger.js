@@ -12,7 +12,7 @@ import {
 import MapView, { Polyline, Marker } from "react-native-maps";
 import * as Location from "expo-location";
 import Constants from "expo-constants";
-import _ from "lodash";
+import debounce from "lodash.debounce"; //https://blog.logrocket.com/how-and-when-to-debounce-or-throttle-in-react/
 import io from "socket.io-client";
 import BottomButton from "../components/BottomButton";
 import apiKey from "../google_api_key";
@@ -103,7 +103,7 @@ export default React.forwardRef(
        * else we wait afresh and wait another 800ms. This helps us not call the place API each time the user is typing
        *  but instead run the function after 800ms where the user has stop typing which saves us more money :)
        */
-      _.debounce((q) => queryPlace(q), 800),
+      debounce((q) => queryPlace(q), 800),
       [latitude, longitude] //we only want to re-render this callback when the user current location changes like after useEffect, etc
     );
 

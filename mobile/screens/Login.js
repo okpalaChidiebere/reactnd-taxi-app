@@ -1,6 +1,6 @@
 import React from "react";
 import { View, StyleSheet, Text, Platform, Alert, Image } from "react-native";
-import { Formik } from "formik"; //https://github.com/formium/formik/discussions/2535
+import { Formik } from "formik";
 import LoginForm from "../components/LoginForm";
 import * as yup from "yup";
 import { loginUser, signUp } from "../NetworkUtils";
