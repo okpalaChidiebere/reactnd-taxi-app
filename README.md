@@ -1,6 +1,7 @@
 # Taxi App
 
 The primary goal of this project is to learn how to use web sockets in React Native Thesame concepts here can be carried over to the React for web as well. We used the `socket.io-client` package for the front-end because we used socket.io for our backend. For some reason you cannot mix regular JS WebSocket interface with Socket.io client. Read more about this [here](https://stackoverflow.com/questions/22232023/can-i-use-socket-io-client-to-connect-to-a-standard-websocket).
+Full course [here](https://react-native-tutorial.thinkific.com/courses/taxi-app)
 
 - The two main package we used from expo `expo-task-manager` and `expo-location`. The Main take away here was as long as the driver and passenger are online and their webSocket connections are still open, we can send data in real time back and forth between a driver and a user communicating after the driver has agreed to pick the passenger!
 - Make Sure you look at the permissions and key we added in AndroidManifest.xml and Info.plist file
