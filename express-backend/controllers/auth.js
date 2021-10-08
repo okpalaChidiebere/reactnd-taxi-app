@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 const config = require("../config");
 
 exports.createUser = async (req, res) => {
-  const { firstName, lastName, email, password } = req.body;
+  const { email, password } = req.body;
 
   const data = users.get();
   if (data.users.find((c) => c.email === email)) {
@@ -13,20 +13,21 @@ exports.createUser = async (req, res) => {
       .send(`An account with the mail ${email} already exists`);
   }
 
-  if (firstName && lastName && email && password) {
+  if (email && password) {
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    res.send(
+    return res.send(
       users.add({
         ...req.body,
         password: hashedPassword,
       })
     );
   } else {
-    res.status(403).send({
-      errors:
-        "Please provide make sure you provided the firstName, lastName, email and password fields",
-    });
+    return res
+      .status(403)
+      .send(
+        "Please provide make sure you provided the email and password fields"
+      );
   }
 };
 
@@ -42,7 +43,7 @@ exports.loginUser = async (req, res) => {
       const token = jwt.sign({ email: user.email }, config.jwtSecret);
       return res.json({ token });
     }
-    return res.send(`Password does not match email ${email}`);
+    return res.status(401).send(`Password does not match email ${email}`);
   }
-  return res.send(`This email ${email} does not exist`);
+  return res.status(401).send(`This email ${email} does not exist`);
 };

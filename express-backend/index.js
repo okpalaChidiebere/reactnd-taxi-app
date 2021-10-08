@@ -1,6 +1,7 @@
 const express = require("express");
 const authRouter = require("./routes/auth");
 const userRouter = require("./routes/users");
+const cors = require("cors");
 const authMiddleware = require("./middleware/auth");
 const errorMiddleware = require("./middleware/error");
 
@@ -13,6 +14,7 @@ app.use(
     extended: true,
   })
 );
+app.use(cors());
 
 app.use("/auth", authRouter);
 app.use("*", authMiddleware); //`*` means we will apply this middleware to every other routes besides the /auth. The position where we place this middleware is important

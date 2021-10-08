@@ -3,10 +3,9 @@ const users = require("../users");
 exports.getUsers = (req, res) => {
   const data = users.get();
 
-  const newUsers = data.users.map(({ firstName, lastName, email }) => ({
-    firstName,
-    lastName,
+  const newUsers = data.users.map(({ id, email }) => ({
+    id,
     email,
   }));
-  res.send({ users: newUsers });
+  return res.send({ users: newUsers });
 };

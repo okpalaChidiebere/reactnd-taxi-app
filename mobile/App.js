@@ -4,6 +4,7 @@ import { StyleSheet, View, Button } from "react-native";
 import Driver from "./screens/Driver";
 import Passenger from "./screens/Passenger";
 import GenericContainer from "./components/GenericContainer";
+import Login from "./screens/Login";
 
 const DriverWithGenericContainer = GenericContainer(Driver);
 const PassengerWithGenericContainer = GenericContainer(Passenger);
@@ -24,8 +25,18 @@ export default function App() {
     return <PassengerWithGenericContainer />;
   }
 
-  return (
-    <View style={styles.container}>
+  return <Login />;
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+    marginTop: 50,
+  },
+});
+/**
+ * <View style={styles.container}>
       <StatusBar style="auto" />
       <Button
         title="Passenger"
@@ -40,13 +51,4 @@ export default function App() {
         }
       />
     </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    marginTop: 50,
-  },
-});
+ */
