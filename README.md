@@ -10,7 +10,7 @@ Full course [here](https://react-native-tutorial.thinkific.com/courses/taxi-app)
 
 # Google Maps APIs
 
-- After you have initialized your project in Google console, the API we used are Places API, Directions API, Maps SDK for Android and Maps SDK for iOS from the [library](https://console.cloud.google.com/apis/library). It does not matter if we enabled all these API on one KEY or we make various Keys, what is important is that the Key you used to query the API must be valid.
+- After you have initialized your project in [Google console](https://console.cloud.google.com/cloud-resource-manager), the API we used are Places API, Directions API, Maps SDK for Android and Maps SDK for iOS from the [library](https://console.cloud.google.com/apis/library). It does not matter if we enabled all these API on one KEY or we make various Keys, what is important is that the Key you used to query the API must be valid.
 - We learned how to use [google maps from web](https://www.google.ca/maps/dir/) to [download gpx-files](https://mapstogpx.com/mobiledev.php) to test navigation in the emulators
 
 # Higher Order Components
