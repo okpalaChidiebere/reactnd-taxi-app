@@ -21,8 +21,13 @@ Full course [here](https://react-native-tutorial.thinkific.com/courses/taxi-app)
 # React Native Maps
 
 - [React Native Maps Mini Course](https://www.youtube.com/watch?v=qlELLikT3FU&t=271s)
-- [https://stackoverflow.com/questions/56766390/react-native-maps-how-to-use-animatecamera-and-setcamera
-  ](https://stackoverflow.com/questions/56766390/react-native-maps-how-to-use-animatecamera-and-setcamera)
+- [https://stackoverflow.com/questions/56766390/react-native-maps-how-to-use-animatecamera-and-setcamera](https://stackoverflow.com/questions/56766390/react-native-maps-how-to-use-animatecamera-and-setcamera)
+
+# Formik
+
+- [https://github.com/formium/formik/discussions/2535](https://github.com/formium/formik/discussions/2535)
+- [https://github.com/formium/formik/issues/1900](https://github.com/formium/formik/issues/1900)
+- [https://formik.org/docs/api/withFormik](https://formik.org/docs/api/withFormik)
 
 # More to explore
 
